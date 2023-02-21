@@ -54,7 +54,6 @@ export function GoogleButton() {
         <GoogleLogin
           clientId={VITE_GOOGLE_CLIENT_ID}
           buttonText="Log in"
-          // onSuccess={handleLog}
           onSuccess={handleLog}
           onFailure={onError}
           cookiePolicy={"single_host_origin"}
