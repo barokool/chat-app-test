@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useToggle, upperFirst } from "@mantine/hooks";
-import { useForm } from "@mantine/form";
 import {
   TextInput,
   PasswordInput,
@@ -14,69 +13,120 @@ import {
   Anchor,
   Stack,
   Container,
+  Box,
 } from "@mantine/core";
 import { GoogleButton } from "~/global-components/GoogleLogin";
 import { GoogleResponse } from "~/models/user";
-import { createUserSession } from "~/utils/cookie";
-import { ActionArgs, json, redirect } from "@remix-run/node";
-import { googleAuthLoginAPI } from "~/api/auth";
-import { useCatch } from "@remix-run/react";
+import { createUserSession, getUserToken } from "~/utils/cookie";
+import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
+import { googleAuthLoginAPI, login } from "~/api/auth";
+import { Form, useCatch, useFetcher } from "@remix-run/react";
 import BrowserOnly from "~/global-components/BrowserOnly";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { FormProvider, useForm } from "react-hook-form";
+
+type FormValues = {
+  email: string;
+  password: string;
+  isLoggedInNormal: boolean;
+};
+
+// const validation = yup
+//   .object({
+//     email: yup
+//       .string()
+//       .required("This field is required")
+//       .email("Email is invalid"),
+//     password: yup
+//       .string()
+//       .required("This field is required")
+//       .min(6, "Please enter more than 6 characters"),
+//   })
+//   .required();
+
+export const loader = async ({ request }: LoaderArgs) => {
+  const validToken = await getUserToken(request);
+  if (validToken) return redirect("/");
+  return null;
+};
 
 export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData();
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+
+  const isLogginNormal = (formData.get("isLoggedInNormal") as string).includes(
+    "true"
+  );
   const accessToken = formData.get("accessToken") as string;
 
-  if (!accessToken) {
-    throw json({
-      message: "Error in logging in, Please try again",
-      status: 404,
-    });
+  if (isLogginNormal) {
+    const body = {
+      email,
+      password,
+    };
+
+    const loginData = await login(body);
+
+    if (!("accessToken" in loginData)) {
+      throw json({
+        message: "Error in logging in, Please try again",
+        status: 404,
+      });
+    }
+
+    const accessToken = loginData.accessToken;
+    return await createUserSession(accessToken, "/");
+  } else {
+    if (!accessToken) {
+      throw json({
+        message: "Error in logging in, Please try again",
+        status: 404,
+      });
+    }
+
+    const response = await googleAuthLoginAPI(accessToken);
+
+    if (!("accessToken" in response))
+      throw json({
+        message: "Error in logging in, Please try again",
+        status: 404,
+      });
+
+    return await createUserSession(response.accessToken, "/chat");
   }
-
-  const response = await googleAuthLoginAPI(accessToken);
-
-  if (!("accessToken" in response))
-    throw json({
-      message: "Error in logging in, Please try again",
-      status: 404,
-    });
-
-  // const headers = new Headers([
-  //   ["Set-Cookie", `access_token=${response.accessToken}; path=/`],
-  //   // [
-  //   //   "Set-Cookie",
-  //   //   `refresh_token=${response.refreshToken}; HttpOnly; path=/; SameSite=lax;  'secure'
-  //   //     }`,
-  //   // ],
-  // ]);
-
-  // return redirect("/", {
-  //   headers,
-  // });
-
-  return await createUserSession(response.accessToken, "/");
 };
 
 const LoginPage = () => {
   const [type, toggle] = useToggle(["login", "register"]);
 
-  const form = useForm({
-    initialValues: {
+  const formMethods = useForm<FormValues>({
+    defaultValues: {
       email: "",
-      name: "",
       password: "",
-      terms: true,
+      isLoggedInNormal: true,
     },
-
-    validate: {
-      email: (val) => (/^\S+@\S+$/.test(val) ? null : "Invalid email"),
-      password: (val) =>
-        val.length <= 6
-          ? "Password should include at least 6 characters"
-          : null,
-    },
+    mode: "onBlur",
+    // resolver: yupResolver(validation),
   });
+  const fetcher = useFetcher();
+
+  const { watch, handleSubmit, getValues, register } = formMethods;
+
+  const onSubmit = (values: FormValues) => {
+    const { email, password } = getValues();
+    fetcher.submit(
+      {
+        email,
+        password,
+        isLoggedInNormal: "true",
+      },
+      {
+        method: "post",
+      }
+    );
+  };
 
   return (
     <BrowserOnly>
@@ -96,70 +146,47 @@ const LoginPage = () => {
             my="lg"
           />
 
-          <form onSubmit={form.onSubmit(() => {})}>
-            <Stack>
-              {type === "register" && (
+          <FormProvider {...formMethods}>
+            <Form onSubmit={handleSubmit(onSubmit)}>
+              <Stack>
                 <TextInput
-                  label="Name"
-                  placeholder="Your name"
-                  value={form.values.name}
-                  onChange={(event) =>
-                    form.setFieldValue("name", event.currentTarget.value)
-                  }
+                  label="Email"
+                  placeholder="hello@mantine.dev"
+                  {...register("email")}
+                  // value={form.values.email}
+                  // onChange={(event) =>
+                  //   form.setFieldValue("email", event.currentTarget.value)
+                  // }
+                  // error={form.errors.email && "Invalid email"}
                 />
-              )}
 
-              <TextInput
-                required
-                label="Email"
-                placeholder="hello@mantine.dev"
-                value={form.values.email}
-                onChange={(event) =>
-                  form.setFieldValue("email", event.currentTarget.value)
-                }
-                error={form.errors.email && "Invalid email"}
-              />
-
-              <PasswordInput
-                required
-                label="Password"
-                placeholder="Your password"
-                value={form.values.password}
-                onChange={(event) =>
-                  form.setFieldValue("password", event.currentTarget.value)
-                }
-                error={
-                  form.errors.password &&
-                  "Password should include at least 6 characters"
-                }
-              />
-
-              {type === "register" && (
-                <Checkbox
-                  label="I accept terms and conditions"
-                  checked={form.values.terms}
-                  onChange={(event) =>
-                    form.setFieldValue("terms", event.currentTarget.checked)
-                  }
+                <PasswordInput
+                  label="Password"
+                  placeholder="Your password"
+                  {...register("password")}
+                  // value={form.values.password}
+                  // onChange={(event) =>
+                  //   form.setFieldValue("password", event.currentTarget.value)
+                  // }
+                  // error={
+                  //   form.errors.password &&
+                  //   "Password should include at least 6 characters"
+                  // }
                 />
-              )}
-            </Stack>
+              </Stack>
 
-            <Group position="apart" mt="xl">
-              <Anchor
-                component="button"
-                type="button"
-                color="dimmed"
-                onClick={() => toggle()}
-                size="xs"
-              >
-                {type === "register"
-                  ? "Already have an account? Login"
-                  : "Don't have an account? Register"}
-              </Anchor>
-              <Button type="submit">{upperFirst(type)}</Button>
-            </Group>
-          </form>
+              <Box sx={{ width: "100%", marginTop: "24px" }}>
+                <Button
+                  type="submit"
+                  sx={{ width: "100%" }}
+                  name="method"
+                  value={"__form"}
+                >
+                  {upperFirst(type)}
+                </Button>
+              </Box>
+            </Form>
+          </FormProvider>
         </Paper>
       </Container>
     </BrowserOnly>

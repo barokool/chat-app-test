@@ -3,6 +3,16 @@ import jwtInterceoptor from "~/axios";
 import { API_URL } from "~/constants/env";
 import { GoogleResponse, User } from "~/models/user";
 
+export interface ILoginInput {
+  email: string;
+  password: string;
+}
+
+export interface IPayload {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export const googleAuthLoginAPI = async (
   token: string
 ): Promise<GoogleResponse | { statusCode: number; message: string }> => {
@@ -59,4 +69,23 @@ export const getUserByTokenByAxiosNoNeedToken = async (token: string) => {
   const data = await jwtInterceoptor.get(`${API_URL}/authen/ahihi`);
 
   return data;
+};
+
+export const login = async (
+  input: ILoginInput
+): Promise<IPayload | { statusCode: number; message: string }> => {
+  try {
+    const data = await fetch(`${API_URL}/authen/login`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+    return await data.json();
+  } catch (error) {
+    console.log(error);
+    return { statusCode: 500, message: `${error}` };
+  }
 };

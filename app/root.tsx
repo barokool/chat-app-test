@@ -29,10 +29,6 @@ export const loader = async ({ request }: LoaderArgs) => {
 
   const userToken = session.get("accessToken") as string;
 
-  if (!userToken) return null;
-
-  const user = await getUserByToken(userToken);
-
   const env = {
     STUPID_REMIX: process.env.STUPID_REMIX,
     API_URL: process.env.API_URL,
@@ -40,6 +36,10 @@ export const loader = async ({ request }: LoaderArgs) => {
     VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID,
     VITE_GOOGLE_CLIENT_SECRET: process.env.VITE_GOOGLE_CLIENT_SECRET,
   };
+
+  if (!userToken) return json({ user: null, ENV: env });
+
+  const user = await getUserByToken(userToken);
 
   if ((user as any)?.statusCode === 401) return json({ user: null, ENV: env });
 
