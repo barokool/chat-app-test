@@ -56,9 +56,10 @@ export const action = async ({ request }: ActionArgs) => {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  const isLogginNormal = (formData.get("isLoggedInNormal") as string).includes(
-    "true"
-  );
+  const isLogginNormal =
+    (formData.get("isLoggedInNormal") as string)?.includes("true") || false;
+
+  console.log(isLogginNormal);
   const accessToken = formData.get("accessToken") as string;
 
   if (isLogginNormal) {
