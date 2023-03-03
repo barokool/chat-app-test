@@ -20,14 +20,12 @@ import NavigationToast from "./design-components/navigation-toast";
 import BrowserOnly from "./global-components/BrowserOnly";
 import GeneralLayout from "./layout/GeneralLayout";
 import { parseJwt } from "./utils/auth/jwt";
-import { getCookieByName, getUserSession } from "./utils/cookie";
+import { getCookieByName, getUserSession, getUserToken } from "./utils/cookie";
 
 createEmotionCache({ key: "mantine" });
 
 export const loader = async ({ request }: LoaderArgs) => {
-  const session = await getUserSession(request);
-
-  const userToken = session.get("accessToken") as string;
+  const validToken = await getUserToken(request);
 
   const env = {
     STUPID_REMIX: process.env.STUPID_REMIX,
@@ -37,9 +35,9 @@ export const loader = async ({ request }: LoaderArgs) => {
     VITE_GOOGLE_CLIENT_SECRET: process.env.VITE_GOOGLE_CLIENT_SECRET,
   };
 
-  if (!userToken) return json({ user: null, ENV: env });
+  if (!validToken) return json({ user: null, ENV: env });
 
-  const user = await getUserByToken(userToken);
+  const user = await getUserByToken(validToken);
 
   if ((user as any)?.statusCode === 401) return json({ user: null, ENV: env });
 

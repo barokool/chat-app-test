@@ -36,7 +36,7 @@ export const getUserSession = async (request: Request) => {
   return await storage.getSession(request.headers.get("cookie"));
 };
 
-const checkTokenValid = (userToken: string) => {
+export const checkTokenValid = (userToken: string) => {
   const parseJWT = parseJwt(userToken);
   if (parseJWT) {
     const currentDate = new Date();
@@ -71,7 +71,7 @@ export const requireUserValidToken = async (
 
   //2.have token but invalid
   const validToken = checkTokenValid(userToken);
-  if (!validToken) return logout(request, "/");
+  if (!validToken) return logout(request, redirectTo);
   return userToken;
 };
 

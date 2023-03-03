@@ -1,5 +1,4 @@
 import axios from "axios";
-import jwtInterceoptor from "~/axios";
 import { API_URL } from "~/constants/env";
 import { GoogleResponse, User } from "~/models/user";
 
@@ -60,13 +59,6 @@ export const getUserByTokenByAxios = async (token: string) => {
       Authorization: bearer,
     },
   });
-
-  return data;
-};
-
-export const getUserByTokenByAxiosNoNeedToken = async (token: string) => {
-  const bearer = "Bearer " + token;
-  const data = await jwtInterceoptor.get(`${API_URL}/authen/ahihi`);
 
   return data;
 };

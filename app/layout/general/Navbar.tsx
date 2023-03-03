@@ -163,7 +163,7 @@ export function HeaderTabs({ tabs }: HeaderTabsProps) {
                       size={20}
                     /> */}
                     <Text weight={500} size="sm" sx={{ lineHeight: 1 }} mr={3}>
-                      {user.name}
+                      {user.email}
                     </Text>
                     <IconChevronDown size={12} stroke={1.5} />
                   </Group>
@@ -220,8 +220,11 @@ export function HeaderTabs({ tabs }: HeaderTabsProps) {
                 <Menu.Divider />
 
                 <Menu.Label>Danger zone</Menu.Label>
-                <Menu.Item icon={<IconPlayerPause size={14} stroke={1.5} />}>
-                  Pause subscription
+                <Menu.Item
+                  onClick={() => navigate("/chat")}
+                  icon={<IconPlayerPause size={14} stroke={1.5} />}
+                >
+                  Chat
                 </Menu.Item>
                 <Menu.Item
                   color="red"
