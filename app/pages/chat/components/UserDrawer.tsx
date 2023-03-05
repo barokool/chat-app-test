@@ -1,15 +1,20 @@
 import { Box, Text } from "@mantine/core";
 import { useNavigate } from "@remix-run/react";
-import { getConversationByUsers } from "~/api/rooms";
+import { createConversation, getConversationByUsers } from "~/api/rooms";
 import BrowserOnly from "~/global-components/BrowserOnly";
-import { User } from "~/models/user";
+import type { User } from "~/models/user";
 
 type UserDrawerProps = {
   currentUser: User;
   user: User;
+  onChangeRoom: (id: number) => void;
 };
 
-export const UserDrawer = ({ currentUser, user }: UserDrawerProps) => {
+export const UserDrawer = ({
+  currentUser,
+  user,
+  onChangeRoom,
+}: UserDrawerProps) => {
   const params = new URL(window.location.href).searchParams;
   const navigate = useNavigate();
 
@@ -20,8 +25,14 @@ export const UserDrawer = ({ currentUser, user }: UserDrawerProps) => {
     if (room && room.id) {
       params.set("conversation", `${room.id}`);
       navigate(`?${params}`);
+      onChangeRoom(room.id);
     } else {
-      // create new conversation with userclicked id
+      const newRoom = await createConversation(usersId);
+      if (newRoom && newRoom.id) {
+        params.set("conversation", `${newRoom.id}`);
+        navigate(`?${params}`);
+        onChangeRoom(newRoom.id);
+      }
     }
   };
 

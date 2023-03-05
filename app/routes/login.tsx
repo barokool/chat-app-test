@@ -18,7 +18,8 @@ import {
 import { GoogleButton } from "~/global-components/GoogleLogin";
 import { GoogleResponse } from "~/models/user";
 import { createUserSession, getUserToken } from "~/utils/cookie";
-import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { googleAuthLoginAPI, login } from "~/api/auth";
 import { Form, useCatch, useFetcher } from "@remix-run/react";
 import BrowserOnly from "~/global-components/BrowserOnly";

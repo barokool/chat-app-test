@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_URL } from "~/constants/env";
-import { GoogleResponse, User } from "~/models/user";
+import type { GoogleResponse, User } from "~/models/user";
 
 export interface ILoginInput {
   email: string;

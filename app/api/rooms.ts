@@ -17,3 +17,17 @@ export const getConversationByUsers = async (
     console.log("erorr ", error);
   }
 };
+
+export const createConversation = async (
+  userIds: string
+): Promise<IRoom | undefined> => {
+  try {
+    const response = await intance.post("/rooms", {
+      users: userIds,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.log("erorr ", error);
+  }
+};

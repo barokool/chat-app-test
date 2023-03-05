@@ -1,13 +1,12 @@
 import { Box, Container } from "@mantine/core";
-import { json, LoaderArgs, redirect } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { getUserByToken } from "~/api/auth";
-import { getUserSession } from "~/utils/cookie";
+import { getUserSession, getUserToken } from "~/utils/cookie";
 
 export const loader = async ({ request }: LoaderArgs) => {
-  const session = await getUserSession(request);
-
-  const userToken = session.get("accessToken") as string;
+  const userToken = await getUserToken(request);
 
   if (!userToken) return redirect("/login");
 
